@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Twitter-like App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a1a;
+    }
+
+    /* ── Navbar ── */
+    nav {
+      background: #1d9bf0;
+      color: white;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    nav .brand { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.5px; }
+    nav .brand span { opacity: .7; font-weight: 400; font-size: .85rem; margin-left: 8px; }
+
+    #userInfo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: .9rem;
+    }
+    #userInfo img {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.6);
+    }
+
+    /* ── Buttons ── */
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 9999px;
+      font-weight: 600;
+      transition: opacity .15s, background .15s;
+    }
+    button:hover { opacity: .85; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-primary { background: white; color: #1d9bf0; padding: 7px 18px; font-size: .88rem; }
+    .btn-danger  { background: #ff4d4f; color: white; padding: 7px 18px; font-size: .88rem; }
+    .btn-tweet   { background: #1d9bf0; color: white; padding: 9px 22px; font-size: .95rem; }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 600px;
+      margin: 28px auto;
+      padding: 0 16px;
+    }
+
+    /* ── Auth banner ── */
+    #authBanner {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    #authBanner h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    #authBanner p  { color: #666; margin-bottom: 24px; font-size: .95rem; }
+
+    /* ── Compose box ── */
+    #composeBox {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    #composeBox textarea {
+      width: 100%;
+      border: 1.5px solid #e1e8ed;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: .97rem;
+      resize: none;
+      font-family: inherit;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #composeBox textarea:focus { border-color: #1d9bf0; }
+    .compose-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #charCount { font-size: .85rem; color: #999; }
+    #charCount.warn  { color: #f90; }
+    #charCount.error { color: #f00; }
+
+    /* ── Stream ── */
+    #stream h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: #444;
+    }
+
+    .post-card {
+      background: white;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      animation: fadeIn .25s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; } }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .post-avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #1d9bf0;
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 1rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .post-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .post-meta strong { display: block; font-size: .95rem; }
+    .post-meta time   { font-size: .78rem; color: #999; }
+    .post-content     { font-size: .97rem; line-height: 1.5; color: #222; }
+
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 14px;
+      margin-top: 20px;
+    }
+    .pagination button { background: white; color: #1d9bf0; border: 1.5px solid #1d9bf0; padding: 7px 18px; font-size: .88rem; }
+    .pagination span   { font-size: .9rem; color: #666; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1a1a1a;
+      color: white;
+      padding: 10px 22px;
+      border-radius: 9999px;
+      font-size: .9rem;
+      transition: transform .3s ease;
+      z-index: 999;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+    #toast.error { background: #ff4d4f; }
+
+    /* ── Empty state ── */
+    .empty { text-align:center; color:#aaa; padding:40px 0; font-size:.95rem; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: flex; justify-content: center; padding: 30px;
+    }
+    .spinner::after {
+      content: '';
+      width: 28px; height: 28px;
+      border: 3px solid #e1e8ed;
+      border-top-color: #1d9bf0;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav>
+  <div class="brand">🐦 Twitterito <span>monolith demo</span></div>
+  <div id="userInfo">
+    <span id="navUsername">Cargando...</span>
+    <button id="btnLogin"  class="btn-primary" onclick="login()"  style="display:none">Iniciar sesión</button>
+    <button id="btnLogout" class="btn-danger"  onclick="logout()" style="display:none">Salir</button>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<div class="container">
+
+  <!-- Auth banner (when not logged in) -->
+  <div id="authBanner" style="display:none">
+    <h2>Bienvenido a Twitterito 🐦</h2>
+    <p>Inicia sesión con tu cuenta de Auth0 para publicar posts.<br>El feed público es visible para todos.</p>
+    <button class="btn-tweet" onclick="login()">Iniciar sesión con Auth0</button>
+  </div>
+
+  <!-- Compose box (when logged in) -->
+  <div id="composeBox" style="display:none">
+    <textarea id="postContent" rows="3" maxlength="140"
+              placeholder="¿Qué está pasando?"
+              oninput="updateCharCount()"></textarea>
+    <div class="compose-footer">
+      <span id="charCount">0 / 140</span>
+      <button class="btn-tweet" id="btnPost" onclick="createPost()">Publicar</button>
+    </div>
+  </div>
+
+  <!-- Stream -->
+  <div id="stream">
+    <h3>Feed público</h3>
+    <div id="postsList"><div class="spinner"></div></div>
+    <div class="pagination" id="paginationControls" style="display:none">
+      <button onclick="changePage(-1)" id="btnPrev">← Anterior</button>
+      <span id="pageInfo"></span>
+      <button onclick="changePage(1)"  id="btnNext">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"></div>
+
+<script>
+  // ──────────────────────────────────────────────
+  //  CONFIG — ajusta estos valores con los tuyos
+  // ──────────────────────────────────────────────
+  const API_BASE = '';          
+  const AUTH0_DOMAIN   = 'dev-iz60ngd4p8tr0cql.us.auth0.com';    
+  const AUTH0_CLIENT_ID = 'gd7gVXghlBkxnCK7bimBSlEveGMz2vmF';
+  const AUTH0_AUDIENCE  = 'https://twitter-monolith-api';
+  const REDIRECT_URI    = window.location.origin + '/index.html';
+
+  // ──────────────────────────────────────────────
+  //  AUTH STATE
+  // ──────────────────────────────────────────────
+  let accessToken = null;
+  let currentUser = null;
+
+  let currentPage = 0;
+  const PAGE_SIZE = 10;
+
+  // ──────────────────────────────────────────────
+  //  INIT
+  // ──────────────────────────────────────────────
+  window.onload = async () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('code')) {
+      await handleCallback(params.get('code'));
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+      const saved = sessionStorage.getItem('access_token');
+      if (saved) {
+        accessToken = saved;
+        await loadUserProfile();
+      }
+    }
+    renderAuth();
+    loadStream();
+  };
+
+  // ──────────────────────────────────────────────
+  //  AUTH0 PKCE helpers
+  // ──────────────────────────────────────────────
+  function base64URLEncode(buffer) {
+    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  }
+
+  async function generateCodeVerifier() {
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    return base64URLEncode(array);
+  }
+
+  async function generateCodeChallenge(verifier) {
+    const encoded = new TextEncoder().encode(verifier);
+    const hash = await crypto.subtle.digest('SHA-256', encoded);
+    return base64URLEncode(hash);
+  }
+
+  async function login() {
+    const verifier   = await generateCodeVerifier();
+    const challenge  = await generateCodeChallenge(verifier);
+    sessionStorage.setItem('pkce_verifier', verifier);
+
+    const url = `https://${AUTH0_DOMAIN}/authorize?` + new URLSearchParams({
+      response_type: 'code',
+      client_id:     AUTH0_CLIENT_ID,
+      redirect_uri:  REDIRECT_URI,
+      scope:         'openid profile email read:posts write:posts read:profile',
+      audience:      AUTH0_AUDIENCE,
+      code_challenge:        challenge,
+      code_challenge_method: 'S256',
+    });
+    window.location.href = url;
+  }
+
+  async function handleCallback(code) {
+    const verifier = sessionStorage.getItem('pkce_verifier');
+    const res = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        grant_type:    'authorization_code',
+        client_id:     AUTH0_CLIENT_ID,
+        code,
+        redirect_uri:  REDIRECT_URI,
+        code_verifier: verifier,
+      }),
+    });
+    const data = await res.json();
+    if (data.access_token) {
+      accessToken = data.access_token;
+      sessionStorage.setItem('access_token', accessToken);
+      await loadUserProfile();
+    } else {
+      showToast('Error al iniciar sesión: ' + (data.error_description || 'desconocido'), true);
+    }
+  }
+
+  function logout() {
+    accessToken = null;
+    currentUser = null;
+    sessionStorage.removeItem('access_token');
+    renderAuth();
+    const url = `https://${AUTH0_DOMAIN}/v2/logout?` + new URLSearchParams({
+      client_id:   AUTH0_CLIENT_ID,
+      returnTo:    REDIRECT_URI,
+    });
+    window.location.href = url;
+  }
+
+  // ──────────────────────────────────────────────
+  //  API CALLS
+  // ──────────────────────────────────────────────
+  async function apiFetch(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    if (accessToken) headers['Authorization'] = `Bearer ${accessToken}`;
+    const res = await fetch(API_BASE + path, { ...options, headers });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  async function loadUserProfile() {
+    try {
+      currentUser = await apiFetch('/api/me');
+    } catch (e) {
+      console.error('Error loading profile:', e);
+      accessToken = null;
+      sessionStorage.removeItem('access_token');
+    }
+  }
+
+  async function loadStream() {
+    document.getElementById('postsList').innerHTML = '<div class="spinner"></div>';
+    try {
+      const data = await apiFetch(`/api/stream?page=${currentPage}&size=${PAGE_SIZE}`);
+      renderPosts(data.posts);
+      renderPagination(data);
+    } catch (e) {
+      document.getElementById('postsList').innerHTML =
+        `<p class="empty">Error al cargar el feed: ${e.message}</p>`;
+    }
+  }
+
+  async function createPost() {
+    const content = document.getElementById('postContent').value.trim();
+    if (!content) return;
+    if (content.length > 140) { showToast('Máximo 140 caracteres', true); return; }
+
+    const btn = document.getElementById('btnPost');
+    btn.disabled = true;
+    btn.textContent = 'Publicando…';
+    try {
+      await apiFetch('/api/posts', {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+      });
+      document.getElementById('postContent').value = '';
+      updateCharCount();
+      showToast('¡Post publicado! 🎉');
+      currentPage = 0;
+      loadStream();
+    } catch (e) {
+      showToast('Error: ' + e.message, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Publicar';
+    }
+  }
+
+  function changePage(delta) {
+    currentPage = Math.max(0, currentPage + delta);
+    loadStream();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ──────────────────────────────────────────────
+  //  RENDER
+  // ──────────────────────────────────────────────
+  function renderAuth() {
+    const loggedIn = !!currentUser;
+    document.getElementById('authBanner').style.display  = loggedIn ? 'none' : 'block';
+    document.getElementById('composeBox').style.display  = loggedIn ? 'block' : 'none';
+    document.getElementById('btnLogin').style.display    = loggedIn ? 'none' : 'inline-block';
+    document.getElementById('btnLogout').style.display   = loggedIn ? 'inline-block' : 'none';
+    document.getElementById('navUsername').textContent   = loggedIn ? `@${currentUser.username}` : '';
+  }
+
+  function renderPosts(posts) {
+    const el = document.getElementById('postsList');
+    if (!posts || posts.length === 0) {
+      el.innerHTML = '<p class="empty">No hay posts aún. ¡Sé el primero! 🐦</p>';
+      return;
+    }
+    el.innerHTML = posts.map(p => `
+      <div class="post-card">
+        <div class="post-header">
+          <div class="post-avatar">
+            ${p.authorPicture
+              ? `<img src="${p.authorPicture}" alt="${p.authorUsername}">`
+              : p.authorUsername.charAt(0).toUpperCase()}
+          </div>
+          <div class="post-meta">
+            <strong>@${escHtml(p.authorUsername)}</strong>
+            <time>${formatDate(p.createdAt)}</time>
+          </div>
+        </div>
+        <div class="post-content">${escHtml(p.content)}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderPagination(data) {
+    const ctrl = document.getElementById('paginationControls');
+    if (data.totalPages <= 1) { ctrl.style.display = 'none'; return; }
+    ctrl.style.display = 'flex';
+    document.getElementById('pageInfo').textContent =
+      `Página ${data.page + 1} de ${data.totalPages}`;
+    document.getElementById('btnPrev').disabled = data.page === 0;
+    document.getElementById('btnNext').disabled = !data.hasNext;
+  }
+
+  function updateCharCount() {
+    const len = document.getElementById('postContent').value.length;
+    const el  = document.getElementById('charCount');
+    el.textContent = `${len} / 140`;
+    el.className = len > 130 ? (len > 140 ? 'error' : 'warn') : '';
+  }
+
+  // ──────────────────────────────────────────────
+  //  UTILS
+  // ──────────────────────────────────────────────
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = isError ? 'error show' : 'show';
+    setTimeout(() => t.className = isError ? 'error' : '', 3000);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  }
+</script>
+</body>
+</html>
