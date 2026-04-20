@@ -1,0 +1,150 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Twitter-like app – three Lambda microservices behind API Gateway
+
+# ─────────────────────────────────────────────
+# Parameters – supply these at deploy time
+# ─────────────────────────────────────────────
+Parameters:
+  Auth0Domain:
+    Type: String
+    Description: "Auth0 tenant domain, e.g. dev-xxxx.us.auth0.com"
+  Auth0Audience:
+    Type: String
+    Description: "Auth0 API audience, e.g. https://twitter-monolith-api"
+    Default: "https://twitter-monolith-api"
+  DbUrl:
+    Type: String
+    Description: "JDBC URL for RDS PostgreSQL, e.g. jdbc:postgresql://host:5432/twitterdb"
+  DbUsername:
+    Type: String
+    Description: "Database username"
+  DbPassword:
+    Type: String
+    NoEcho: true
+    Description: "Database password"
+
+# ─────────────────────────────────────────────
+# Globals
+# ─────────────────────────────────────────────
+Globals:
+  Function:
+    Runtime: java17
+    MemorySize: 1024
+    Timeout: 30
+    Environment:
+      Variables:
+        AUTH0_DOMAIN: !Ref Auth0Domain
+        AUTH0_AUDIENCE: !Ref Auth0Audience
+        SPRING_DATASOURCE_URL: !Ref DbUrl
+        SPRING_DATASOURCE_USERNAME: !Ref DbUsername
+        SPRING_DATASOURCE_PASSWORD: !Ref DbPassword
+    # Snap-start reduces cold starts for Java 17 Lambdas
+    SnapStart:
+      ApplyOn: PublishedVersions
+
+# ─────────────────────────────────────────────
+# Resources
+# ─────────────────────────────────────────────
+Resources:
+
+  # ── Shared HTTP API ────────────────────────
+  TwitterApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - "*"
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+        AllowHeaders:
+          - Authorization
+          - Content-Type
+
+  # ── User Service ───────────────────────────
+  UserServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: twitter-user-service
+      Handler: com.twitter.userservice.handler.LambdaHandler::handleRequest
+      CodeUri: user-service/target/user-service-1.0.0.jar
+      Description: "Handles GET /api/me and GET /api/me/posts"
+      Events:
+        GetMe:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/me
+            Method: GET
+        GetMyPosts:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/me/posts
+            Method: GET
+
+  # ── Post Service ───────────────────────────
+  PostServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: twitter-post-service
+      Handler: com.twitter.postservice.handler.LambdaHandler::handleRequest
+      CodeUri: post-service/target/post-service-1.0.0.jar
+      Description: "Handles CRUD on /api/posts"
+      Events:
+        GetAllPosts:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/posts
+            Method: GET
+        GetPostById:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/posts/{id}
+            Method: GET
+        CreatePost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/posts
+            Method: POST
+        GetPostsByUser:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/posts/user/{auth0Id}
+            Method: GET
+
+  # ── Stream Service ─────────────────────────
+  StreamServiceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: twitter-stream-service
+      Handler: com.twitter.streamservice.handler.LambdaHandler::handleRequest
+      CodeUri: stream-service/target/stream-service-1.0.0.jar
+      Description: "Handles GET /api/stream (public paginated feed)"
+      Events:
+        GetStream:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TwitterApi
+            Path: /api/stream
+            Method: GET
+
+# ─────────────────────────────────────────────
+# Outputs
+# ─────────────────────────────────────────────
+Outputs:
+  ApiBaseUrl:
+    Description: "Base URL of the API Gateway"
+    Value: !Sub "https://${TwitterApi}.execute-api.${AWS::Region}.amazonaws.com"
+  UserServiceUrl:
+    Value: !Sub "https://${TwitterApi}.execute-api.${AWS::Region}.amazonaws.com/api/me"
+  PostServiceUrl:
+    Value: !Sub "https://${TwitterApi}.execute-api.${AWS::Region}.amazonaws.com/api/posts"
+  StreamServiceUrl:
+    Value: !Sub "https://${TwitterApi}.execute-api.${AWS::Region}.amazonaws.com/api/stream"

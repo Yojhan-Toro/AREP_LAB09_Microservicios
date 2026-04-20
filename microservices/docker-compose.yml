@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+
+  # ── Base de datos compartida ────────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: twitter-db
+    environment:
+      POSTGRES_DB: twitterdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── User Service ─────────────────────────────────────────────────────────────
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: twitter-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      SERVER_PORT: 8081
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/twitterdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Post Service ─────────────────────────────────────────────────────────────
+  post-service:
+    build:
+      context: ./post-service
+      dockerfile: Dockerfile
+    container_name: twitter-post-service
+    ports:
+      - "8082:8082"
+    environment:
+      SERVER_PORT: 8082
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/twitterdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── Stream Service ────────────────────────────────────────────────────────────
+  stream-service:
+    build:
+      context: ./stream-service
+      dockerfile: Dockerfile
+    container_name: twitter-stream-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/twitterdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
