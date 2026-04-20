@@ -1,0 +1,15 @@
+com\twitter\userservice\dto\ErrorDto.class
+com\twitter\userservice\dto\PostDto$Response.class
+com\twitter\userservice\controller\UserController.class
+com\twitter\userservice\entity\Post.class
+com\twitter\userservice\handler\LambdaHandler.class
+com\twitter\userservice\config\SecurityConfig.class
+com\twitter\userservice\config\AudienceValidator.class
+com\twitter\userservice\dto\UserDto.class
+com\twitter\userservice\repository\UserRepository.class
+com\twitter\userservice\dto\PostDto.class
+com\twitter\userservice\UserServiceApplication.class
+com\twitter\userservice\controller\GlobalExceptionHandler.class
+com\twitter\userservice\entity\User.class
+com\twitter\userservice\repository\PostRepository.class
+com\twitter\userservice\service\UserService.class

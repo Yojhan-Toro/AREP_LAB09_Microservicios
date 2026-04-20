@@ -1,0 +1,33 @@
+server:
+  port: ${SERVER_PORT:8082}
+
+spring:
+  application:
+    name: post-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/twitterdb}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://${AUTH0_DOMAIN:YOUR-AUTH0-DOMAIN}/
+          audiences: ${AUTH0_AUDIENCE:https://twitter-monolith-api}
+
+auth0:
+  domain: ${AUTH0_DOMAIN:YOUR-AUTH0-DOMAIN}
+  audience: ${AUTH0_AUDIENCE:https://twitter-monolith-api}
+
+logging:
+  level:
+    com.twitter.postservice: INFO
