@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Twitterito Microservices</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<nav>
+  <div class="brand">Twitterito <span>microservices</span></div>
+  <div id="userInfo">
+    <span id="navUsername"></span>
+    <button id="btnLogin" class="btn-primary" onclick="login()" style="display:none">Iniciar sesión</button>
+    <button id="btnLogout" class="btn-danger" onclick="logout()" style="display:none">Salir</button>
+  </div>
+</nav>
+
+<main class="container">
+  <section id="servicePanel" class="card service-panel">
+    <h3>Servicios</h3>
+    <div class="service-list">
+      <div class="service-item">
+        <span>User Service (8081)</span>
+        <span class="service-status" id="status-user">-</span>
+        <a href="http://localhost:8081/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+      </div>
+      <div class="service-item">
+        <span>Post Service (8082)</span>
+        <span class="service-status" id="status-post">-</span>
+        <a href="http://localhost:8082/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+      </div>
+      <div class="service-item">
+        <span>Stream Service (8083)</span>
+        <span class="service-status" id="status-stream">-</span>
+        <a href="http://localhost:8083/swagger-ui.html" target="_blank" rel="noopener">Swagger</a>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="checkServices()">Verificar servicios</button>
+  </section>
+
+  <section id="authBanner" class="card" style="display:none">
+    <h2>Bienvenido a Twitterito</h2>
+    <p>Inicia sesión con Auth0 para publicar posts. El stream público siempre está disponible.</p>
+    <button class="btn-tweet" onclick="login()">Iniciar sesión con Auth0</button>
+  </section>
+
+  <section id="composeBox" class="card" style="display:none">
+    <h3>Crear post</h3>
+    <textarea id="postContent" rows="3" maxlength="140" placeholder="¿Qué está pasando?" oninput="updateCharCount()"></textarea>
+    <div class="compose-footer">
+      <span id="charCount">0 / 140</span>
+      <button id="btnPost" class="btn-tweet" onclick="createPost()">Publicar</button>
+    </div>
+  </section>
+
+  <section id="myProfile" class="card" style="display:none">
+    <h3>Mi perfil</h3>
+    <div id="profileSummary">Cargando...</div>
+  </section>
+
+  <section id="stream" class="card">
+    <h3>Feed público</h3>
+    <div id="postsList"><div class="spinner"></div></div>
+    <div id="paginationControls" class="pagination" style="display:none">
+      <button id="btnPrev" onclick="changePage(-1)">Anterior</button>
+      <span id="pageInfo"></span>
+      <button id="btnNext" onclick="changePage(1)">Siguiente</button>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+<script src="./app.js"></script>
+</body>
+</html>

@@ -2,13 +2,15 @@ server:
   port: ${SERVER_PORT:8083}
 
 spring:
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
   application:
     name: stream-service
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/twitterdb}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/twitterdb}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: ${SPRING_DATASOURCE_PASSWORD:secret}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,3 +22,9 @@ spring:
 logging:
   level:
     com.twitter.streamservice: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

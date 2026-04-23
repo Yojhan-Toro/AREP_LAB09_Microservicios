@@ -1,0 +1,17 @@
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # In tests we use MockMvc's jwt() post-processor, so no real issuer is needed.
+          # We override with a dummy value to prevent Spring from calling Auth0 on startup.
+          issuer-uri: https://test-domain.auth0.com/
+
+auth0:
+  domain: test-domain.auth0.com
+  audience: https://twitter-monolith-api
+
+logging:
+  level:
+    org.springframework.security: WARN
+    com.twitter.monolith: INFO
