@@ -1,0 +1,70 @@
+# ======================
+# JAVA / MAVEN
+# ======================
+target/
+*.jar
+*.war
+*.ear
+*.class
+
+# Logs
+*.log
+
+# Maven wrapper
+.mvn/wrapper/maven-wrapper.jar
+
+# ======================
+# SPRING BOOT
+# ======================
+*.properties
+*.yml
+*.yaml
+
+# (Opcional: si quieres mantener application.yml, comenta la línea de arriba y usa esto)
+# !src/main/resources/application.yml
+
+# ======================
+# NODE (por si tienes frontend)
+# ======================
+node_modules/
+dist/
+build/
+
+# ======================
+# ENV VARIABLES
+# ======================
+.env
+.env.*
+
+# ======================
+# DOCKER
+# ======================
+*.tar
+*.gz
+
+# ======================
+# IDEs
+# ======================
+
+# VS Code
+.vscode/
+
+# IntelliJ
+.idea/
+*.iml
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# ======================
+# OS
+# ======================
+.DS_Store
+Thumbs.db
+
+# ======================
+# TEST / COVERAGE
+# ======================
+coverage/
